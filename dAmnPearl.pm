@@ -12,10 +12,10 @@ package dAmnPearl;
     
     require dAmnPacket;
     
-    my $version     = '1.0';
+    my $version     = '1.01';
     my $useragent   = "dAmnPearl v$version";
     my $author      = 'DivinityArcane <eittreim.justin@live.com>';
-    my $date        = 'Wed October 31 2012 23:07';
+    my $date        = 'Sat November 3 2012 22:09';
     my $cwd         = '.';
     my $logdir      = "$cwd/logs";
     my $server      = 'chat.deviantart.com';
@@ -283,8 +283,45 @@ package dAmnPearl;
                                     }
                                     
                                     when ('commands') {
-                                        say($ns, '<b>Commands available</b>:<br/>&nbsp;&middot;&nbsp; about &nbsp;&middot;&nbsp; '.
-                                            "commands &nbsp;&middot;&nbsp; ping &nbsp;&middot;&nbsp; quit.$highlight");
+                                        my @commands = ('about', 'commands', 'join', 'part', 'ping', 'quit', 'say');
+                                        my $cmdlist = '';
+                                        foreach (@commands) {
+                                            $cmdlist .= $_ . ' &nbsp;&middot;&nbsp; ';
+                                        }
+                                        say($ns, '<b>Commands available</b>:<br/>&nbsp;&middot;&nbsp; '. substr $cmdlist, 0, -22 .$highlight);
+                                    }
+                                    
+                                    when ('join') {
+                                        if (lc $from eq lc $owner) {
+                                            if (defined $args[1]) {
+                                                joinChannel($args[1]);
+                                            } else {
+                                                say($ns, "Usage: $trigger<i>join <b>#channel</b></i>$highlight");
+                                            }
+                                        }
+                                    }
+                                    
+                                    when ('part') {
+                                        if (lc $from eq lc $owner) {
+                                            if (defined $args[1]) {
+                                                if (lc $args[1] eq '#datashare') { return; }
+                                                partChannel($args[1]);
+                                            } else {
+                                                say($ns, "Usage: $trigger<i>part <b>#channel</b></i>$highlight");
+                                            }
+                                        }
+                                    }
+                                    
+                                    when ('say') {
+                                        if (lc $from eq lc $owner) {
+                                            if (defined $args[2] and substr($args[1], 0, 1) eq '#') {
+                                                if (lc $args[1] eq '#datashare') { return; }
+                                                my $theMsg = substr $msg, length($trigger) + 5 + length($args[1]);
+                                                say($args[1], $theMsg);
+                                            } else {
+                                                say($ns, "Usage: $trigger<i>say <b>#channel some message</b></i>$highlight");
+                                            }
+                                        }
                                     }
                                     
                                     when ('quit') {
@@ -436,7 +473,7 @@ package dAmnPearl;
     
     sub joinChannel {
         my $chan = $_[0];
-        if (substr ($chan, 0, 1) eq '#') {
+        if (substr ($chan, 0, 5) ne 'chat:') {
             $chan = formatNS($chan);
         }
         sendPacket("join $chan");
@@ -444,7 +481,7 @@ package dAmnPearl;
     
     sub partChannel {
         my $chan = $_[0];
-        if (substr ($chan, 0, 1) eq '#') {
+        if (substr ($chan, 0, 5) ne 'chat:') {
             $chan = formatNS($chan);
         }
         sendPacket("part $chan");
@@ -452,7 +489,7 @@ package dAmnPearl;
     
     sub say {
         my ($chan, $msg) = @_;
-        if (substr ($chan, 0, 1) eq '#') {
+        if (substr ($chan, 0, 5) ne 'chat:') {
             $chan = formatNS($chan);
         }
         sendPacket("send $chan\n\nmsg main\n\n$msg");
@@ -460,7 +497,7 @@ package dAmnPearl;
     
     sub npsay {
         my ($chan, $msg) = @_;
-        if (substr ($chan, 0, 1) eq '#') {
+        if (substr ($chan, 0, 5) ne 'chat:') {
             $chan = formatNS($chan);
         }
         sendPacket("send $chan\n\nnpmsg main\n\n$msg");
@@ -468,7 +505,7 @@ package dAmnPearl;
     
     sub act {
         my ($chan, $msg) = @_;
-        if (substr ($chan, 0, 1) eq '#') {
+        if (substr ($chan, 0, 5) ne 'chat:') {
             $chan = formatNS($chan);
         }
         sendPacket("send $chan\n\naction main\n\n$msg");
@@ -487,9 +524,9 @@ package dAmnPearl;
         my $chan = $_[0];
         if (substr ($chan, 0, 1) eq '#') {
             return 'chat:' . substr $chan, 1;
-        } else {
+        } elsif (length $chan >= 6) {
             return '#' . substr $chan, 5;
-        }
+        } else { return $chan; }
     }
     
     sub timestamp {
@@ -561,6 +598,10 @@ package dAmnPearl;
         
         # Emotes
         $string =~ s/&emote\t([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)\t/$1/g;
+        
+        # < and >
+        $string =~ s/&gt;/>/g;
+        $string =~ s/&lt;/</g;
         
         return $string;
     }
