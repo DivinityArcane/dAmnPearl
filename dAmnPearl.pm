@@ -6,16 +6,17 @@ package dAmnPearl;
 
     use POSIX qw(strftime);
     use Digest::MD5 qw(md5_hex);
-    use Time::HiRes qw(time);
+    use Time::HiRes qw(time sleep);
+    use Config;
     
     use feature "switch";
     
     require dAmnPacket;
     
-    my $version     = '1.01';
+    my $version     = '1.02';
     my $useragent   = "dAmnPearl v$version";
     my $author      = 'DivinityArcane <eittreim.justin@live.com>';
-    my $date        = 'Sat November 3 2012 22:09';
+    my $date        = 'Mon November 12 2012 21:47';
     my $cwd         = '.';
     my $logdir      = "$cwd/logs";
     my $server      = 'chat.deviantart.com';
@@ -90,12 +91,14 @@ package dAmnPearl;
             out('CORE', 'No stored authtoken, getting one...');
             getAuthToken($username, $password);
             
-            # Store it
-            open(my $ATF, '>', "$cwd/authtoken.db")
-                or die("Failed to write authtoken from file: $!");
-                
-            print $ATF $authtoken;
-            close $ATF;
+            if (defined $authtoken) {
+                # Store it
+                open(my $ATF, '>', "$cwd/authtoken.db")
+                    or die("Failed to write authtoken from file: $!");
+                    
+                print $ATF $authtoken;
+                close $ATF;
+            }
         }
         
         if (not defined $authtoken) {
@@ -120,11 +123,14 @@ package dAmnPearl;
         my $packet = '';
         my $char = '';
         
+        local $SIG{ALRM} = sub { timed_out() };
+        
         while (defined $connected) {
             sysread($socket, $char, 1);
             if ($char eq "\0") {
                 handle($packet);
                 $packet = '';
+                alarm(100);
             } else {
                 $packet .= $char;
             }
@@ -133,6 +139,14 @@ package dAmnPearl;
         close $socket;
         
         out('CORE', 'Disconnected abruptly. This shouldn\'t happen!');
+    }
+    
+    sub timed_out {
+        alarm 0;
+        out('CORE', 'Caught timeout signal, reconnecting in 5 seconds...');
+        close $socket;
+        sleep(5);
+        init_connect();
     }
     
     sub handle {
@@ -180,7 +194,14 @@ package dAmnPearl;
                 if (lc $packet{parameter} eq 'chat:datashare') { return; }
                 my $ns = formatNS($packet{parameter});
                 if ($packet{arguments}{e} eq 'ok') {
-                    out('CORE', "** Parted $ns [$packet{arguments}{e}]");
+                    my $reason = '';
+                    if (defined $packet{arguments}{r}) {
+                        $reason = ': '.$packet{arguments}{r};
+                    }
+                    out('CORE', "** Parted $ns [$packet{arguments}{e}]".$reason);
+                    if ($reason eq ': timed out') {
+                        timed_out();
+                    }
                 } else {
                     out('CORE', "** Failed to part $ns [$packet{arguments}{e}]");
                 }
@@ -274,7 +295,7 @@ package dAmnPearl;
                                         my $uptime = uptime();
                                         say($ns, '<a href="http://www.botdom.com/wiki/DAmnPearl"><b><code>dAmnPearl</code></b></a> '.
                                             "version $version by :devDivinityArcane:<br/>&nbsp;&raquo;<b>Owner</b>: :dev$owner:<br/>".
-                                            "&nbsp;&raquo;<b>Uptime</b>: $uptime $highlight");
+                                            "&nbsp;&raquo;<b>Uptime</b>: $uptime $highlight<br/>&nbsp;&raquo;<b>System</b>: $Config{osname} $Config{archname}, Perl $^V");
                                     }
                                     
                                     when ('ping') {
@@ -460,7 +481,7 @@ package dAmnPearl;
                     exit;
                 } else {
                     out('CORE', 'Attempting to reconnect in 5 seconds...');
-                    usleep(5000);
+                    sleep(5);
                     init_connect();
                 }
             }
