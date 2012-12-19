@@ -295,7 +295,7 @@ package dAmnPearl;
                                         my $uptime = uptime();
                                         say($ns, '<a href="http://www.botdom.com/wiki/DAmnPearl"><b><code>dAmnPearl</code></b></a> '.
                                             "version $version by :devDivinityArcane:<br/>&nbsp;&raquo;<b>Owner</b>: :dev$owner:<br/>".
-                                            "&nbsp;&raquo;<b>Uptime</b>: $uptime $highlight<br/>&nbsp;&raquo;<b>System</b>: $Config{osname} $Config{archname}, Perl $^V");
+                                            "&nbsp;&raquo;<b>Uptime</b>: $uptime $highlight<br/>&nbsp;&raquo;<b>System</b>: $^O, Perl $^V");
                                     }
                                     
                                     when ('ping') {

@@ -2,7 +2,6 @@
 CLS
 ECHO Installing deps...
 
-CALL perl -MCPAN -e "install Crypt::SSLeay"
-
+CALL ppm install Crypt::SSLeay
 ECHO Done!
 PAUSE
