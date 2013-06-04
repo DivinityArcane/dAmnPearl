@@ -615,7 +615,7 @@ package dAmnPearl;
         $string =~ s/&br\t/<br\/>/g;
         
         # Thumbs
-        $string =~ s/&thumb\t([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)\t/:thumb$1:/g;
+        $string =~ s/&thumb\t([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)\t/:thumb$1:/g;
         
         # Emotes
         $string =~ s/&emote\t([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)\t/$1/g;
